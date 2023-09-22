@@ -1,11 +1,11 @@
 const express = require("express");
 const app = express();
-const bcrypt = require("bcrypt");
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv").config();
 const db =require("./models/db");
 const userRouter=require("./routes/userRoutes");
+const errorHandler = require("./controllers/errorHandler");
 
 // defining all my middlewares
 app.use(bodyParser.json());
@@ -18,8 +18,9 @@ app.use((req, res, next) => {
 db.connectToDb();
 
 // defining a method  to check the session system  and login and logout 
+app.use(errorHandler);
 
-
+//using the errorHandler as a middleware in my app 
 
 
 //use the router 
