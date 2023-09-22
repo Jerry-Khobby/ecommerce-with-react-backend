@@ -5,6 +5,7 @@ const session = require("express-session");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv").config();
 const db =require("./models/db");
+const userRouter=require("./routes/userRoutes");
 
 // defining all my middlewares
 app.use(bodyParser.json());
@@ -16,7 +17,13 @@ app.use((req, res, next) => {
 
 db.connectToDb();
 
+// defining a method  to check the session system  and login and logout 
 
+
+
+
+//use the router 
+app.use("/",userRouter);
 
 
 

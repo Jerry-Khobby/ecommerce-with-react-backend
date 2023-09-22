@@ -15,11 +15,7 @@ required:true,
         required:true,
         unique:true,
     },
-    password1:{
-        type:String,
-        required:true,
-    },
-    password2:{
+    password:{
         type:String,
         required:true,
     },
