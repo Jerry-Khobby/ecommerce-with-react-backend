@@ -2,6 +2,7 @@ const User =require("../models/userdata");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const mongoose=require("mongoose");
+const argon2 = require("argon2");
 
 
 
@@ -82,9 +83,11 @@ const createUser=async(req,res)=>{
 
     // The new user account was created successfully
     res.status(201).json({ message: 'User account created successfully' });
+    console.log("User account created successfully");
   } catch (error) {
     // The new user account could not be created
     res.status(500).json({ error: 'An error occurred while creating the user account' });
+    console.log("An error occurred while creating the user account");
   }
 
   // Close the session

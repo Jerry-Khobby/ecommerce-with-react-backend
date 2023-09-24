@@ -1,6 +1,5 @@
 const express = require("express");
 const app = express();
-const session = require("express-session");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv").config();
 const db =require("./models/db");
@@ -10,10 +9,7 @@ const errorHandler = require("./controllers/errorHandler");
 // defining all my middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use((req, res, next) => {
-  res.locals.mongoose = { error: null };
-  next();
-});
+
 
 db.connectToDb();
 
