@@ -1,4 +1,5 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion } = require('mongodb');
+
 
 const uri = "mongodb+srv://jeremiah:ecommerce@shoppingapp.athanpy.mongodb.net/?retryWrites=true&w=majority";
 
