@@ -8,7 +8,7 @@ const userController =require("../controllers/userController");
 
 router.post("/signin",userController.getAllUsers);
 router.post("/signup",userController.createUser);
-router.get("/",userController.confirmUser);
+router.put("auth/resetpassword/:email",userController.resetPassword);
 
 
 

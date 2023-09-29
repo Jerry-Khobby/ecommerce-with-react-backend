@@ -1,7 +1,6 @@
 
 const bcrypt = require("bcrypt");
-const expressSession = require("express-session");
-const mongoose=require("mongoose");
+const session = require("express-session");
 const User =require("../models/userdata");
 
 
@@ -17,42 +16,31 @@ const getAllUsers= async (req, res) => {
    //Validate the user's input 
    const {email,password}=req.body;
    if(!email || !password){
-    return res.render("signin",{
-        messages:{
-            error:"Please enter your email address and password",
-        }
-    })
+    console.log("Please enter");
+    return res.status(400),json({error:'Please enter your email address and password'})
    }
-   //trying to find the user in the database 
-
-   //If the user is not found , return an error message
-   // just trying to redirect on my local host site foor the frontend of my react app 
-   const user =await User.findOne({email});
-
-   if(!user){
-    return res.redirect("http://localhost:3000/signup",{
-        messages:{
-            error:"There is email account",
-        },
-    })
-   }
-
-   const passwordMatch =await bcrypt.compare(user.password,password);
-   if(!passwordMatch){
-    return res.render("signin",{
-        messages:{
-            error:"Incorrect password , try again",
-        }
-    })
-   }
-   //The user has successfully loged in 
-   req.session.user = user;
-   return res.redirect("/",{
-    messages: {
-        success:"Logged in successfully",
-    }
-   })
+try{
+const user =await User.findOne({email});
+if(!user){
+  console.log('User not found');
+  return res.status(401).json({ error: "You don't have an account" });
 }
+const passwordMatch =await bcrypt.compare(password,user.password);
+if(!passwordMatch){
+  console.log("Password mismatch");
+  return res.status(401).json({error: "Incorrect password"});
+
+}
+// the user has successfully logged in 
+req.session.user = user;
+console.log("User has successfully logged in");
+return res.status(200).json({success:"Login successfully"});
+}catch(e){
+console.error('An error occured',e);
+return res.status(500).json({error:'An error occured while logging in '});
+}
+}
+
 
 
 
@@ -69,6 +57,16 @@ const createUser=async(req,res)=>{
     return res.status(403).json({ error: 'The passwords must match' });
   }
   try{
+// check if there is already an existing user account same email address 
+const existingUser =await User.findOne({email});
+if(existingUser){
+  //send a message to the user informing them that their email address 
+  console.log("There is  already an existing user account");
+  return res.status(409).json({error:'Email address is already in use '});
+}
+
+
+
    // Hash the user's password
    const newHashed = await bcrypt.hash(password1, 10);
     // Create a new user account
@@ -100,14 +98,45 @@ const createUser=async(req,res)=>{
 
 
 
-const confirmUser=async(req,res)=>{
-    console.log("Miracles are happening");
+const resetPassword=async(req,res)=>{
+    try{
+      const {email}=req.params;
+      const {newPassword,confirmPassword}=req.body;
+
+
+// trying to grab the user email from the link and working on finding it in the database 
+const user =await User.findOne({email});
+console.log(user);
+
+if(!user){
+  return res.status(404).json({error:'User not found'});
+}
+//check if the newPassword and t
+
+
+if(newPassword!==confirmPassword) {
+  return res.status(403).json({ error: 'The passwords must match' });
+}
+user.password = newPassword;
+user.resetPasswordToken=undefined;
+user.resetPasswordExpires=undefined;
+
+if(user.resetPassword && Date.now()>user.resetPasswordExpires){
+  return res.status(400).json({error:'Reset password token has expired'});
+}
+
+await user.save();
+res.status(200),json({message: 'Password reset successfully'});
+    }catch(error){
+      console.error('An error occurred', error);
+      res.status(500).json({ error: 'An error occurred while updating the password' });
+    }
 }
 
 
 module.exports={
     getAllUsers,
     createUser,
-    confirmUser,
+    resetPassword,
     //I can add more controllers functions as needed 
 }

@@ -7,6 +7,7 @@ const userRouter=require("./routes/userRoutes");
 const errorHandler = require("./controllers/errorHandler");
 const cors =require("cors");
 const mongoose = require('mongoose');
+const session = require("express-session");
 
 
 // defining all my middlewares
@@ -14,19 +15,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 
-
+// the session parsers 
+app.use(session({
+  secret:"Your secret key",
+  saveUninitialized:true,
+  resave:false,
+}));
 //using the errorHandler as a middleware in my app 
 app.use(errorHandler);
 //Defining   how long the session must take 
 app.use(cors());
 
-/* const corsOptions={
-  origin: 'http://localhost:3000/',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
+// another define 
+const isAuthenticated=(req,res,next)=>{
+  if(req.session&&req.session.user){
+    return next();
+  }else{
+    return res.redirect('/login');
+  }
 }
-app.use(corsOptions); */
-const uri = "#####################################";
+
+const uri = "mongodb+srv://jeremiah:ecommerce@shoppingapp.athanpy.mongodb.net/?retryWrites=true&w=majority";
 
 //use the router 
 app.use("/auth",userRouter);
