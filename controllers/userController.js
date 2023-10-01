@@ -28,7 +28,7 @@ if(!user){
 const passwordMatch =await bcrypt.compare(password,user.password);
 if(!passwordMatch){
   console.log("Password mismatch");
-  return res.status(401).json({error: "Incorrect password"});
+  return res.status(403).json({error: "Incorrect password"});
 
 }
 // the user has successfully logged in 
