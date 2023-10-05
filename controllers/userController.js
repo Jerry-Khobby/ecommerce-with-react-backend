@@ -1,7 +1,10 @@
 
 const bcrypt = require("bcrypt");
-const session = require("express-session");
 const User =require("../models/userdata");
+const nodemailer = require('nodemailer');
+ // trying to import the jsonwebtokens 
+
+ const {generateToken}=require('../models/token');
 
 
 
@@ -29,12 +32,11 @@ const passwordMatch =await bcrypt.compare(password,user.password);
 if(!passwordMatch){
   console.log("Password mismatch");
   return res.status(403).json({error: "Incorrect password"});
-
 }
 // the user has successfully logged in 
-req.session.user = user;
+const token=generateToken(user);
 console.log("User has successfully logged in");
-return res.status(200).json({success:"Login successfully"});
+return res.status(200).json({success:"Login successfully",token});
 }catch(e){
 console.error('An error occured',e);
 return res.status(500).json({error:'An error occured while logging in '});
@@ -64,9 +66,6 @@ if(existingUser){
   console.log("There is  already an existing user account");
   return res.status(409).json({error:'Email address is already in use '});
 }
-
-
-
    // Hash the user's password
    const newHashed = await bcrypt.hash(password1, 10);
     // Create a new user account
@@ -76,17 +75,14 @@ if(existingUser){
     email,
     password: newHashed,
   });
-  
-
   console.log("New User is created: ",newUser);
-
       // Pass the session as an option to the save operation
-      
       await newUser.save();
-      console.log("New User is saved successfully");
-
+/*       req.session.user=newUser; */
+const token = generateToken(newUser);
+console.log("New User is saved successfully");
     // The new user account was created successfully
-    res.status(201).json({ message: 'User account created successfully' });
+    res.status(201).json({ message: 'User account created successfully',token});
     console.log("User account created successfully");
   } catch (error) {
     // The new user account could not be created
@@ -98,10 +94,171 @@ if(existingUser){
 
 
 
-const resetPassword=async(req,res)=>{
+
+const forgottenPassword =async(req,res)=>{
+  const {email}=req.params;
+  const {code}=req.body;
+
+  try{
+//trying to find the user in the database 
+const user =await User.findOne({email});
+console.log(user);
+
+if(!user){
+  console.log('User not found');
+      return res.status(401).json({ error: "You don't have an account" });
+}
+//after then we are trying to send the email message to the user to be able to send the user the user OTp
+const otp=generateOTP();
+await sendOTPByEmail(email,otp,user,code,res);
+  }catch(error){
+    console.error('Error occurred:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+  // defining the function for the generated of the email 
+  function generateOTP(){
+    return Math.floor(100000+Math.random()*9000000);
+  }
+  async function sendOTPByEmail(email,otp,user,code,res){
+
+    //methods working to send the email to the user from my email 
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: '',
+        pass: '',
+      },
+    });
+    const mailOptions = {
+      from: 'jerrymardeburg@gmail.com',
+      to: email,
+      subject: 'OTP Verification Code',
+      text: `Your OTP for password reset is: ${otp}`,
+    };
+
     try{
-      const {email}=req.params;
-      const {newPassword,confirmPassword}=req.body;
+      await transporter.sendMail(mailOptions);
+      console.log("The OTP code has been sent successfully");
+      if(user.otp!==code){
+        console.log("The OTP code sent is not the same as the one inputted ");
+        return res.status(401).json({ error: 'Invalid OTP code' });
+      }else{
+        console.log("The OTP code sent is the same as the one inputted ");
+        return res.status(200).json({ message: 'The OTP has been verified successfully' });
+      }
+
+    }catch(error){
+      console.error('Error sending OTP:', error);
+      return res.status(500).json({ error: 'Failed to send OTP' });
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const resetPasswordmiddle = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  // Validate OTP (check if it matches the stored OTP for the email)
+  const storedOTP = getStoredOTP(email); // Get stored OTP from your database
+  if (!storedOTP || storedOTP !== otp) {
+    return res.status(400).json({ error: 'Invalid OTP' });
+  }
+
+  try {
+    // Update user's password in the database
+    const user = await User.findOneAndUpdate({ email }, { password: newPassword });
+    
+    // Generate a new JWT token for the user
+    const newToken = generateToken(user); // Assuming you have a generateToken function
+
+    // Clear the stored OTP (optional)
+    clearStoredOTP(email); // Clear OTP from your database
+
+    return res.status(200).json({ message: 'Password reset successful', token: newToken });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const resetPassword=async(req,res)=>{
+  try{
+    const {email}=req.params;
+    const {newPassword,confirmPassword}=req.body;
 
 
 // trying to grab the user email from the link and working on finding it in the database 
@@ -109,34 +266,36 @@ const user =await User.findOne({email});
 console.log(user);
 
 if(!user){
-  return res.status(404).json({error:'User not found'});
+return res.status(404).json({error:'User not found'});
 }
 //check if the newPassword and t
 
 
 if(newPassword!==confirmPassword) {
-  return res.status(403).json({ error: 'The passwords must match' });
+return res.status(403).json({ error: 'The passwords must match' });
 }
 user.password = newPassword;
 user.resetPasswordToken=undefined;
 user.resetPasswordExpires=undefined;
 
 if(user.resetPassword && Date.now()>user.resetPasswordExpires){
-  return res.status(400).json({error:'Reset password token has expired'});
+return res.status(400).json({error:'Reset password token has expired'});
 }
 
 await user.save();
 res.status(200),json({message: 'Password reset successfully'});
-    }catch(error){
-      console.error('An error occurred', error);
-      res.status(500).json({ error: 'An error occurred while updating the password' });
-    }
+  }catch(error){
+    console.error('An error occurred', error);
+    res.status(500).json({ error: 'An error occurred while updating the password' });
+  }
 }
+
 
 
 module.exports={
     getAllUsers,
     createUser,
     resetPassword,
+    forgottenPassword,
     //I can add more controllers functions as needed 
 }

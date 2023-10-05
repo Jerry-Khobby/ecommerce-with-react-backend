@@ -14,4 +14,12 @@ router.put("auth/resetpassword/:email",userController.resetPassword);
 
 
 
+// creating a separete router for the forgotten passwords 
+router.post("/resetpassword/otp/:email",userController.forgottenPassword);
+
+
+
+
+
+
 module.exports=router;
