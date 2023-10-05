@@ -24,12 +24,12 @@ async function sendOTPByEmail(email, otp, res, user) {
     port: 465,
     secure: true,
     auth: {
-      user: 'jerrymardeburg@gmail.com',
-      pass: 'mcor sqgq ljab zhzx',
+      user: '',
+      pass: '',
     },
   });
   const mailOptions = {
-    from: 'jerrymardeburg@gmail.com',
+    from: '',
     to: email,
     subject: 'OTP Verification Code',
     text: `Your OTP for password reset is: ${otp}`,
