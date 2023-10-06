@@ -7,7 +7,7 @@ const nodemailer = require('nodemailer');
  const {generateToken}=require('../models/token');
 
 // I will like to store the OTP code in a variable first 
- let codeValidations=12345;
+ let codeValidations=0;
 
 // defining the functions for getting the email and sending the OTP codes 
 
@@ -24,12 +24,12 @@ async function sendOTPByEmail(email, otp, res, user) {
     port: 465,
     secure: true,
     auth: {
-      user: '',
-      pass: '',
+      user: 'jerrymardeburg@gmail.com',
+      pass: 'mcor sqgq ljab zhzx',
     },
   });
   const mailOptions = {
-    from: '',
+    from: 'jerrymardeburg@gmail.com',
     to: email,
     subject: 'OTP Verification Code',
     text: `Your OTP for password reset is: ${otp}`,
@@ -58,9 +58,10 @@ const emailOtpCodes = async (req, res) => {
     }
     // after then we are trying to send the email message to the user to send the user the user OTP
     const otp = generateOTP();
+    console.log(otp);
+    await sendOTPByEmail(email, otp, res, user);
     codeValidations = otp;
     console.log(codeValidations);
-    await sendOTPByEmail(email, otp, res, user);
   } catch (error) {
     console.error('Error occurred:', error);
     return res.status(500).json({ error: 'Internal server error' });
