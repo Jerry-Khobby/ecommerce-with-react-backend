@@ -1,16 +1,11 @@
-
 const bcrypt = require("bcrypt");
 const User =require("../models/userdata");
 const nodemailer = require('nodemailer');
  // trying to import the jsonwebtokens 
-
  const {generateToken}=require('../models/token');
-
 // I will like to store the OTP code in a variable first 
  let codeValidations=0;
-
 // defining the functions for getting the email and sending the OTP codes 
-
 function generateOTP(){
   return Math.floor(10000+Math.random()*90000);
 }
@@ -62,6 +57,9 @@ const emailOtpCodes = async (req, res) => {
     await sendOTPByEmail(email, otp, res, user);
     codeValidations = otp;
     console.log(codeValidations);
+    const resetToken = generateToken(user._id);
+    user.resetToken = resetToken;
+    await user.save();
   } catch (error) {
     console.error('Error occurred:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -96,7 +94,13 @@ if(!passwordMatch){
   return res.status(403).json({error: "Incorrect password"});
 }
 // the user has successfully logged in 
-const token=generateToken(user);
+const token=generateToken(user._id);
+res.cookie("token",token,{
+  withCredentials: true,
+  httpOnly: false,
+})
+console.log(token);
+
 console.log("User has successfully logged in");
 return res.status(200).json({success:"Login successfully",token});
 }catch(e){
@@ -141,7 +145,11 @@ if(existingUser){
       // Pass the session as an option to the save operation
       await newUser.save();
 /*       req.session.user=newUser; */
-const token = generateToken(newUser);
+const token = generateToken(newUser._id);
+res.cookie("token",token,{
+  withCredentials: true,
+  httpOnly: false,
+});
 console.log("New User is saved successfully");
     // The new user account was created successfully
     res.status(201).json({ message: 'User account created successfully',token});
@@ -163,7 +171,8 @@ const forgottenPassword =async(req,res)=>{
   const {code}=req.body;
   console.log(code);
   try{
-  if(code!==codeValidations){
+const codeValidationsString = codeValidations.toString();
+  if(code!==codeValidationsString){
     console.log("The OTP code sent is not the same as the one inputted ");
     return res.status(401).json({ error: 'Invalid OTP code' });
   }else{
@@ -180,133 +189,34 @@ const forgottenPassword =async(req,res)=>{
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const resetPasswordmiddle = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
-
-  // Validate OTP (check if it matches the stored OTP for the email)
-  const storedOTP = getStoredOTP(email); // Get stored OTP from your database
-  if (!storedOTP || storedOTP !== otp) {
-    return res.status(400).json({ error: 'Invalid OTP' });
-  }
-
-  try {
-    // Update user's password in the database
-    const user = await User.findOneAndUpdate({ email }, { password: newPassword });
-    
-    // Generate a new JWT token for the user
-    const newToken = generateToken(user); // Assuming you have a generateToken function
-
-    // Clear the stored OTP (optional)
-    clearStoredOTP(email); // Clear OTP from your database
-
-    return res.status(200).json({ message: 'Password reset successful', token: newToken });
-  } catch (error) {
-    console.error('Error resetting password:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const resetPassword=async(req,res)=>{
   try{
-    const {email}=req.params;
-    const {newPassword,confirmPassword}=req.body;
+    const {newPassword,confirmPassword} =req.body;
+    const {email} =req.params;
+if(newPassword!==confirmPassword){
+  console.log("The passwords you entered are not matching");
+  return res.status(400).json({error:'Passwords do not match'});
+}
 
+console.log(email);
 
-// trying to grab the user email from the link and working on finding it in the database 
+//search for the user in the database by using the email of the user 
 const user =await User.findOne({email});
-console.log(user);
-
 if(!user){
-return res.status(404).json({error:'User not found'});
+  console.log("User does not exist in the database ")
+  return res.status(404).json({error:'User not found'});
+
 }
-//check if the newPassword and t
-
-
-if(newPassword!==confirmPassword) {
-return res.status(403).json({ error: 'The passwords must match' });
-}
-user.password = newPassword;
-user.resetPasswordToken=undefined;
-user.resetPasswordExpires=undefined;
-
-if(user.resetPassword && Date.now()>user.resetPasswordExpires){
-return res.status(400).json({error:'Reset password token has expired'});
-}
-
+// if the user is in the database and we have also confirm the matching of the password , then we have to harsh the password and save it 
+const harshedPassword = await  bcrypt.hash(newPassword,10);// 10 is the number of the salt rounds 
+user.password=harshedPassword;//
 await user.save();
-res.status(200),json({message: 'Password reset successfully'});
+
+// generate the token again 
+return res.status(200).json({message:'Password have been updated successfully and will be saved'});
   }catch(error){
-    console.error('An error occurred', error);
-    res.status(500).json({ error: 'An error occurred while updating the password' });
+console.log("There is an error with the code in the backend");
+return res.status(500).json({error:'I dont know what to do again'});
   }
 }
 

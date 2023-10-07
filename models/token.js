@@ -1,19 +1,8 @@
-const jwt = require('jsonwebtoken');
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
-function generateToken(user) {
-  return jwt.sign({ email: user.email, userId: user._id }, 'adjalskjdlakjsdlkasjdlaskdjlaksjdl', { expiresIn: '1h' });
-}
-
-function verifyToken(token) {
-  try {
-    const decoded = jwt.verify(token, 'your_secret_key');
-    return decoded;
-  } catch (error) {
-    return null; // Token verification failed
-  }
-}
-
-module.exports = {
-  generateToken,
-  verifyToken,
+module.exports.generateToken= (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: 3 * 24 * 60 * 60,
+  });
 };
