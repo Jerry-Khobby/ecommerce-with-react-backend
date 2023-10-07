@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const User =require("../models/userdata");
 const nodemailer = require('nodemailer');
+const dotenv=require("dotenv").config();
  // trying to import the jsonwebtokens 
  const {generateToken}=require('../models/token');
 // I will like to store the OTP code in a variable first 
@@ -19,12 +20,12 @@ async function sendOTPByEmail(email, otp, res, user) {
     port: 465,
     secure: true,
     auth: {
-      user: 'jerrymardeburg@gmail.com',
-      pass: 'mcor sqgq ljab zhzx',
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASS,
     },
   });
   const mailOptions = {
-    from: 'jerrymardeburg@gmail.com',
+    from:process.env.EMAIL_ADDRESS,
     to: email,
     subject: 'OTP Verification Code',
     text: `Your OTP for password reset is: ${otp}`,

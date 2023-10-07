@@ -35,7 +35,7 @@ const isAuthenticated=(req,res,next)=>{
   }
 }
 
-const uri = "mongodb+srv://jeremiah:ecommerce@shoppingapp.athanpy.mongodb.net/?retryWrites=true&w=majority";
+const uri = process.env.MONGODB_URI;
 
 //use the router 
 app.use("/auth",userRouter);
